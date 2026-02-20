@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Criptográfico Clásico</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.8);
+            --text-main: #f8fafc;
+            --text-accent: #38bdf8;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
+        }
+
+        .crypto-container {
+            background-color: var(--panel-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            max-width: 650px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            /* Inicia oculto para la animación de GSAP */
+            transform: translateY(30px);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-accent);
+            font-size: 28px;
+            margin-top: 0;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--text-accent);
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .flex-row .input-group {
+            flex: 1;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--text-accent);
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background-color: #0ea5e9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(56, 189, 248, 0.4);
+        }
+
+        #outputText {
+            background-color: rgba(15, 23, 42, 0.5);
+            border-color: var(--text-accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="crypto-container" id="mainContainer">
+        <h1>Terminal Criptográfica</h1>
+
+        <div class="input-group">
+            <label for="alphabet">Conjunto de Caracteres (Base de indexación):</label>
+            <input type="text" id="alphabet"
+                value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?">
+        </div>
+
+        <div class="flex-row">
+            <div class="input-group">
+                <label for="cipherType">Algoritmo:</label>
+                <select id="cipherType">
+                    <option value="cesar">César (Desplazamiento)</option>
+                    <option value="atbash">Atbash (Espejo)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="mode">Modo Operativo:</label>
+                <select id="mode">
+                    <option value="cifrar">Cifrar</option>
+                    <option value="descifrar">Descifrar</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="module">Módulo (César):</label>
+                <input type="number" id="module" value="3">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="inputText">Cadena de Entrada:</label>
+            <textarea id="inputText" placeholder=">_ Ingresa los datos aquí..."></textarea>
+        </div>
+
+        <button id="execBtn" onclick="runCryptoEngine()">Ejecutar Algoritmo</button>
+
+        <div class="input-group">
+            <label for="outputText">Salida Procesada:</label>
+            <textarea id="outputText" readonly placeholder=">_ Esperando procesamiento..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        // Animación de entrada al cargar la página usando GSAP
+        gsap.to("#mainContainer", {
+            duration: 1,
+            opacity: 1,
+            y: 0,
+            ease: "power3.out"
+        });
+
+        function runCryptoEngine() {
+            // [REF-TIPO-1]
+            const text = document.getElementById("inputText").value;
+            const alphabet = document.getElementById("alphabet").value;
+            const cipherType = document.getElementById("cipherType").value;
+            const isDecrypt = document.getElementById("mode").value === "descifrar";
+            const moduleShift = parseInt(document.getElementById("module").value) || 0;
+
+            let result = "";
+
+            // [REF-TIPO-2]
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                let index = alphabet.indexOf(char);
+
+                // [REF-TIPO-3]
+                if (index === -1) {
+                    result += char;
+                    continue;
+                }
+
+                if (cipherType === "cesar") {
+                    // [REF-TIPO-4]
+                    let shift = isDecrypt ? -moduleShift : moduleShift;
+                    let newIndex = (index + shift) % alphabet.length;
+
+                    if (newIndex < 0) {
+                        newIndex += alphabet.length;
+                    }
+                    result += alphabet[newIndex];
+
+                } else if (cipherType === "atbash") {
+                    // [REF-TIPO-5]
+                    let newIndex = (alphabet.length - 1) - index;
+                    result += alphabet[newIndex];
+                }
+            }
+
+            // [REF-TIPO-6]
+            const outputBox = document.getElementById("outputText");
+            outputBox.value = result;
+
+            // Animación GSAP para feedback visual al usuario
+            gsap.fromTo(outputBox,
+                { backgroundColor: "rgba(56, 189, 248, 0.3)" },
+                { backgroundColor: "rgba(15, 23, 42, 0.5)", duration: 1, ease: "power2.out" }
+            );
+
+            // Animación de rebote sutil en el botón
+            gsap.fromTo("#execBtn",
+                { scale: 0.95 },
+                { scale: 1, duration: 0.3, ease: "back.out(1.7)" }
+            );
+        }
+    </script>
+
+</body>
+
+</html>
